@@ -1,11 +1,21 @@
 // 获取DOM元素
 const todoInput = document.getElementById('todo-input');
 const dueDateInput = document.getElementById('due-date-input');
+const priorityInput = document.getElementById('priority-input');
 const addButton = document.getElementById('add-button');
 const todoList = document.getElementById('todo-list');
 const itemsLeft = document.getElementById('items-left');
 const clearCompletedBtn = document.getElementById('clear-completed');
 const filterBtns = document.querySelectorAll('.filter-btn');
+const priorityButtons = document.querySelectorAll('.priority-btn');
+const viewButtons = document.querySelectorAll('.view-btn');
+const quadrantView = document.getElementById('quadrant-view');
+const quadrants = {
+    'important-urgent': document.querySelector('#important-urgent .quadrant-list'),
+    'important-not-urgent': document.querySelector('#important-not-urgent .quadrant-list'),
+    'not-important-urgent': document.querySelector('#not-important-urgent .quadrant-list'),
+    'not-important-not-urgent': document.querySelector('#not-important-not-urgent .quadrant-list')
+};
 
 // 初始化待办事项数组
 let todos = [];
@@ -25,9 +35,14 @@ function saveTodos() {
 }
 
 // 渲染待办事项列表
-function renderTodos(filter = 'all') {
+function renderTodos(filter = 'all', priority = 'all', view = 'list') {
     // 清空列表
     todoList.innerHTML = '';
+    
+    // 清空四象限视图
+    Object.values(quadrants).forEach(quadrant => {
+        quadrant.innerHTML = '';
+    });
     
     // 根据过滤条件筛选待办事项
     let filteredTodos = todos;
@@ -37,15 +52,23 @@ function renderTodos(filter = 'all') {
         filteredTodos = todos.filter(todo => todo.completed);
     }
     
+    // 根据优先级筛选
+    if (priority !== 'all') {
+        filteredTodos = filteredTodos.filter(todo => todo.priority === priority);
+    }
+    
     // 如果没有待办事项，显示空状态
     if (filteredTodos.length === 0) {
-        const emptyState = document.createElement('div');
-        emptyState.classList.add('empty-state');
-        emptyState.innerHTML = `
-            <i class="fas fa-clipboard-list empty-icon"></i>
-            <p>${filter === 'all' ? '没有待办事项' : filter === 'active' ? '没有未完成的待办事项' : '没有已完成的待办事项'}</p>
-        `;
-        todoList.appendChild(emptyState);
+        if (view === 'list') {
+            const emptyState = document.createElement('div');
+            emptyState.classList.add('empty-state');
+            emptyState.innerHTML = `
+                <i class="fas fa-clipboard-list empty-icon"></i>
+                <p>${filter === 'all' ? '没有待办事项' : filter === 'active' ? '没有未完成的待办事项' : '没有已完成的待办事项'}</p>
+            `;
+            todoList.appendChild(emptyState);
+        }
+        return;
     }
     
     // 渲染筛选后的待办事项
@@ -53,7 +76,12 @@ function renderTodos(filter = 'all') {
         const todoItem = document.createElement('li');
         todoItem.classList.add('todo-item');
         todoItem.dataset.id = todo.id;
+        todoItem.dataset.priority = todo.priority;
         todoItem.draggable = true;
+        
+        // 添加优先级类
+        todoItem.classList.add(todo.priority);
+        
         if (todo.completed) {
             todoItem.classList.add('completed');
         }
@@ -143,8 +171,25 @@ function renderTodos(filter = 'all') {
         todoItem.appendChild(textContainer);
         todoItem.appendChild(actions);
         
-        // 将列表项添加到列表
-        todoList.appendChild(todoItem);
+        // 根据视图模式添加到不同容器
+        if (view === 'list') {
+            todoList.appendChild(todoItem);
+        } else if (view === 'quadrant') {
+            // 复制节点添加到对应象限
+            const quadrantItem = todoItem.cloneNode(true);
+            // 重新添加事件监听器
+            const checkbox = quadrantItem.querySelector('.todo-checkbox');
+            checkbox.addEventListener('change', () => toggleTodo(todo.id));
+            
+            const editBtn = quadrantItem.querySelector('.edit-btn');
+            editBtn.addEventListener('click', () => startEditing(todo.id));
+            
+            const deleteBtn = quadrantItem.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', () => deleteTodo(todo.id));
+            
+            // 添加到对应象限
+            quadrants[todo.priority].appendChild(quadrantItem);
+        }
     });
     
     // 更新剩余项目数量
@@ -156,18 +201,20 @@ function renderTodos(filter = 'all') {
 function addTodo() {
     const text = todoInput.value.trim();
     const dueDate = dueDateInput.value;
+    const priority = priorityInput.value;
     
     if (text) {
         const newTodo = {
             id: Date.now(),
             text,
             completed: false,
-            dueDate: dueDate || null
+            dueDate: dueDate || null,
+            priority: priority || 'not-important-not-urgent'
         };
         
         todos.push(newTodo);
         saveTodos();
-        renderTodos(getCurrentFilter());
+        renderTodos(getCurrentFilter(), getCurrentPriority(), getCurrentView());
         
         // 清空输入框
         todoInput.value = '';
@@ -186,27 +233,39 @@ function toggleTodo(id) {
     });
     
     saveTodos();
-    renderTodos(getCurrentFilter());
+    renderTodos(getCurrentFilter(), getCurrentPriority(), getCurrentView());
 }
 
 // 删除待办事项
 function deleteTodo(id) {
     todos = todos.filter(todo => todo.id !== id);
     saveTodos();
-    renderTodos(getCurrentFilter());
+    renderTodos(getCurrentFilter(), getCurrentPriority(), getCurrentView());
 }
 
 // 清除已完成的待办事项
 function clearCompleted() {
     todos = todos.filter(todo => !todo.completed);
     saveTodos();
-    renderTodos(getCurrentFilter());
+    renderTodos(getCurrentFilter(), getCurrentPriority(), getCurrentView());
 }
 
 // 获取当前过滤条件
 function getCurrentFilter() {
     const activeFilter = document.querySelector('.filter-btn.active');
     return activeFilter ? activeFilter.dataset.filter : 'all';
+}
+
+// 获取当前优先级过滤条件
+function getCurrentPriority() {
+    const activePriorityBtn = document.querySelector('.priority-btn.active');
+    return activePriorityBtn ? activePriorityBtn.dataset.priority : 'all';
+}
+
+// 获取当前视图模式
+function getCurrentView() {
+    const activeViewBtn = document.querySelector('.view-btn.active');
+    return activeViewBtn ? activeViewBtn.dataset.view : 'list';
 }
 
 // 设置过滤条件
@@ -219,7 +278,42 @@ function setFilter(filter) {
         }
     });
     
-    renderTodos(filter);
+    renderTodos(filter, getCurrentPriority(), getCurrentView());
+}
+
+// 设置优先级过滤条件
+function setPriority(priority) {
+    priorityButtons.forEach(btn => {
+        if (btn.dataset.priority === priority) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    renderTodos(getCurrentFilter(), priority, getCurrentView());
+}
+
+// 设置视图模式
+function setView(view) {
+    viewButtons.forEach(btn => {
+        if (btn.dataset.view === view) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // 切换视图显示
+    if (view === 'quadrant') {
+        todoList.style.display = 'none';
+        quadrantView.style.display = 'grid';
+    } else {
+        todoList.style.display = 'block';
+        quadrantView.style.display = 'none';
+    }
+    
+    renderTodos(getCurrentFilter(), getCurrentPriority(), view);
 }
 
 // 事件监听
@@ -267,38 +361,63 @@ function startEditing(id) {
         dateInput.value = todo.dueDate;
     }
     
+    // 创建优先级选择框
+    const prioritySelect = document.createElement('select');
+    prioritySelect.classList.add('edit-priority');
+    
+    const priorities = [
+        { value: 'important-urgent', text: '重要且紧急' },
+        { value: 'important-not-urgent', text: '重要不紧急' },
+        { value: 'not-important-urgent', text: '紧急不重要' },
+        { value: 'not-important-not-urgent', text: '不重要不紧急' }
+    ];
+    
+    priorities.forEach(p => {
+        const option = document.createElement('option');
+        option.value = p.value;
+        option.textContent = p.text;
+        if (todo.priority === p.value) {
+            option.selected = true;
+        }
+        prioritySelect.appendChild(option);
+    });
+    
     // 添加输入框到编辑容器
     editContainer.appendChild(editInput);
     editContainer.appendChild(dateInput);
+    editContainer.appendChild(prioritySelect);
     
     // 替换文本容器为编辑容器
     todoItem.replaceChild(editContainer, textContainer);
     editInput.focus();
     
     // 添加事件监听器
-    editInput.addEventListener('blur', () => finishEditing(id, editInput, dateInput));
-    dateInput.addEventListener('blur', () => finishEditing(id, editInput, dateInput));
+    editInput.addEventListener('blur', () => finishEditing(id, editInput, dateInput, prioritySelect));
+    dateInput.addEventListener('blur', () => finishEditing(id, editInput, dateInput, prioritySelect));
+    prioritySelect.addEventListener('blur', () => finishEditing(id, editInput, dateInput, prioritySelect));
     editInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            finishEditing(id, editInput, dateInput);
+            finishEditing(id, editInput, dateInput, prioritySelect);
         }
     });
 }
 
 // 完成编辑待办事项
-function finishEditing(id, editInput, dateInput) {
+function finishEditing(id, editInput, dateInput, prioritySelect) {
     const newText = editInput.value.trim();
     const newDate = dateInput.value;
+    const newPriority = prioritySelect.value;
     const todoItem = document.querySelector(`.todo-item[data-id="${id}"]`);
     
     if (newText) {
-        // 更新待办事项文本和日期
+        // 更新待办事项文本、日期和优先级
         todos = todos.map(todo => {
             if (todo.id === id) {
                 return { 
                     ...todo, 
                     text: newText,
-                    dueDate: newDate || todo.dueDate
+                    dueDate: newDate || todo.dueDate,
+                    priority: newPriority || todo.priority
                 };
             }
             return todo;
@@ -308,7 +427,7 @@ function finishEditing(id, editInput, dateInput) {
     }
     
     // 重新渲染
-    renderTodos(getCurrentFilter());
+    renderTodos(getCurrentFilter(), getCurrentPriority(), getCurrentView());
 }
 
 // 添加拖放排序功能
@@ -467,7 +586,37 @@ document.addEventListener('DOMContentLoaded', () => {
         // 检查到期任务
         checkDueTasks();
     }
+    
+    // 设置优先级按钮事件监听
+    priorityButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            setPriority(btn.dataset.priority);
+        });
+    });
+    
+    // 设置视图按钮事件监听
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            setView(btn.dataset.view);
+        });
+    });
+    
+    // 默认激活第一个优先级按钮
+    if (priorityButtons.length > 0) {
+        priorityButtons[0].classList.add('active');
+    }
 });
+
+// 获取优先级显示文本
+function getPriorityText(priority) {
+    const priorityMap = {
+        'important-urgent': '重要且紧急',
+        'important-not-urgent': '重要不紧急',
+        'not-important-urgent': '紧急不重要',
+        'not-important-not-urgent': '不重要不紧急'
+    };
+    return priorityMap[priority] || '';
+}
 
 // 显示欢迎提示
 function showWelcomeToast() {

@@ -39,42 +39,59 @@ header h1 {
 .todo-form {
     display: flex;
     margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 #todo-input {
     flex: 1;
     padding: 12px 15px;
     border: 1px solid #ddd;
-    border-radius: 4px 0 0 0;
+    border-radius: 4px 4px 0 0;
     font-size: 1rem;
     outline: none;
     transition: border-color 0.3s;
+    min-width: 200px;
 }
 
 #todo-input:focus {
     border-color: #f6d365;
 }
 
+.form-controls {
+    display: flex;
+    width: 100%;
+}
+
 #due-date-input {
     padding: 12px 10px;
     border: 1px solid #ddd;
-    border-left: none;
-    border-right: none;
+    border-top: none;
     font-size: 1rem;
     outline: none;
     transition: border-color 0.3s;
-    width: 140px;
+    flex: 1;
 }
 
 #due-date-input:focus {
     border-color: #f6d365;
 }
 
+#priority-input {
+    padding: 12px 10px;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-left: none;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s;
+    flex: 1;
+}
+
 #add-button {
     background-color: #f6d365;
     color: white;
     border: none;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 0 4px 0;
     padding: 0 15px;
     cursor: pointer;
     transition: background-color 0.3s;
@@ -87,12 +104,27 @@ header h1 {
 /* 过滤器样式 */
 .filters {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     margin-bottom: 20px;
     gap: 10px;
 }
 
-.filter-btn {
+.filter-group {
+    display: flex;
+    align-items: center;
+    margin: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.filter-label {
+    font-weight: bold;
+    margin-right: 5px;
+    color: #555;
+}
+
+.filter-btn, .priority-btn, .view-btn {
     background: none;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -100,6 +132,7 @@ header h1 {
     cursor: pointer;
     font-size: 0.9rem;
     transition: all 0.3s;
+    margin: 0 3px;
 }
 
 .filter-btn.active {
@@ -108,7 +141,19 @@ header h1 {
     border-color: #f6d365;
 }
 
-.filter-btn:hover:not(.active) {
+.priority-btn.active {
+    background-color: #2196F3;
+    color: white;
+    border-color: #2196F3;
+}
+
+.view-btn.active {
+    background-color: #9c27b0;
+    color: white;
+    border-color: #9c27b0;
+}
+
+.filter-btn:hover:not(.active), .priority-btn:hover:not(.active), .view-btn:hover:not(.active) {
     background-color: #f8f8f8;
 }
 
@@ -212,29 +257,92 @@ header h1 {
     flex: 1;
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 .edit-input {
     flex: 1;
     padding: 8px;
     border: 1px solid #f6d365;
-    border-radius: 4px;
+    border-radius: 4px 4px 0 0;
     font-size: 1rem;
     outline: none;
+    min-width: 100%;
 }
 
 .edit-date-input {
     padding: 8px;
     border: 1px solid #f6d365;
-    border-radius: 4px;
+    border-radius: 0 0 0 4px;
     font-size: 1rem;
     outline: none;
-    width: 140px;
+    flex: 1;
+    border-top: none;
+}
+
+.edit-priority {
+    padding: 8px;
+    border: 1px solid #f6d365;
+    border-radius: 0 0 4px 0;
+    font-size: 1rem;
+    outline: none;
+    flex: 1;
+    border-top: none;
+    border-left: none;
 }
 #todo-list {
     list-style-type: none;
     margin-bottom: 20px;
     min-height: 50px;
+}
+
+/* 四象限视图样式 */
+.quadrant-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 15px;
+    height: 600px;
+    margin-bottom: 20px;
+}
+
+.quadrant {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    overflow-y: auto;
+    background-color: #f9f9f9;
+}
+
+.quadrant h3 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+    color: #333;
+}
+
+.quadrant-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* 优先级样式 */
+.todo-item.important-urgent {
+    border-left: 4px solid #ff5252;
+}
+
+.todo-item.important-not-urgent {
+    border-left: 4px solid #2196F3;
+}
+
+.todo-item.not-important-urgent {
+    border-left: 4px solid #ff9800;
+}
+
+.todo-item.not-important-not-urgent {
+    border-left: 4px solid #9e9e9e;
 }
 
 .todo-item {
