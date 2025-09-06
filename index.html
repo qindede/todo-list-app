@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>待办事项清单</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>待办事项清单</h1>
+        </header>
+        
+        <div class="todo-form">
+            <input type="text" id="todo-input" placeholder="添加新的待办事项..." autofocus>
+            <button id="add-button"><i class="fas fa-plus"></i></button>
+        </div>
+        
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="active">未完成</button>
+            <button class="filter-btn" data-filter="completed">已完成</button>
+        </div>
+        
+        <ul id="todo-list" class="sortable">
+            <!-- 任务列表将通过JavaScript动态生成 -->
+        </ul>
+        
+        <div class="todo-stats">
+            <span id="items-left">0 项待办</span>
+            <button id="clear-completed">清除已完成</button>
+        </div>
+        
+        <div class="keyboard-shortcuts">
+            <p>键盘快捷键: <span class="shortcut">Alt+N</span> 新建任务 | <span class="shortcut">Alt+C</span> 清除已完成</p>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
