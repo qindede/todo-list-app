@@ -1,5 +1,6 @@
 // 获取DOM元素
 const todoInput = document.getElementById('todo-input');
+const dueDateInput = document.getElementById('due-date-input');
 const addButton = document.getElementById('add-button');
 const todoList = document.getElementById('todo-list');
 const itemsLeft = document.getElementById('items-left');
@@ -57,6 +58,19 @@ function renderTodos(filter = 'all') {
             todoItem.classList.add('completed');
         }
         
+        // 检查是否有截止日期且已过期
+        if (todo.dueDate && !todo.completed) {
+            const dueDate = new Date(todo.dueDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (dueDate < today) {
+                todoItem.classList.add('overdue');
+            } else if (isSameDay(dueDate, today)) {
+                todoItem.classList.add('due-today');
+            }
+        }
+        
         // 创建复选框
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -64,11 +78,45 @@ function renderTodos(filter = 'all') {
         checkbox.checked = todo.completed;
         checkbox.addEventListener('change', () => toggleTodo(todo.id));
         
+        // 创建文本容器
+        const textContainer = document.createElement('div');
+        textContainer.classList.add('text-container');
+        
         // 创建文本
         const todoText = document.createElement('span');
         todoText.classList.add('todo-text');
         todoText.textContent = todo.text;
         todoText.addEventListener('dblclick', () => startEditing(todo.id));
+        
+        // 添加文本到容器
+        textContainer.appendChild(todoText);
+        
+        // 如果有截止日期，添加日期显示
+        if (todo.dueDate) {
+            const dateDisplay = document.createElement('span');
+            dateDisplay.classList.add('due-date');
+            
+            const dueDate = new Date(todo.dueDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            if (isSameDay(dueDate, today)) {
+                dateDisplay.textContent = '今天';
+                dateDisplay.classList.add('due-today');
+            } else if (isSameDay(dueDate, tomorrow)) {
+                dateDisplay.textContent = '明天';
+                dateDisplay.classList.add('due-soon');
+            } else if (dueDate < today) {
+                dateDisplay.textContent = formatDate(dueDate) + ' (已过期)';
+                dateDisplay.classList.add('overdue');
+            } else {
+                dateDisplay.textContent = formatDate(dueDate);
+            }
+            
+            textContainer.appendChild(dateDisplay);
+        }
         
         // 创建操作按钮容器
         const actions = document.createElement('div');
@@ -92,7 +140,7 @@ function renderTodos(filter = 'all') {
         
         // 将元素添加到列表项
         todoItem.appendChild(checkbox);
-        todoItem.appendChild(todoText);
+        todoItem.appendChild(textContainer);
         todoItem.appendChild(actions);
         
         // 将列表项添加到列表
@@ -107,11 +155,14 @@ function renderTodos(filter = 'all') {
 // 添加新的待办事项
 function addTodo() {
     const text = todoInput.value.trim();
+    const dueDate = dueDateInput.value;
+    
     if (text) {
         const newTodo = {
             id: Date.now(),
             text,
-            completed: false
+            completed: false,
+            dueDate: dueDate || null
         };
         
         todos.push(newTodo);
@@ -120,6 +171,7 @@ function addTodo() {
         
         // 清空输入框
         todoInput.value = '';
+        dueDateInput.value = '';
         todoInput.focus();
     }
 }
@@ -190,8 +242,16 @@ filterBtns.forEach(btn => {
 // 开始编辑待办事项
 function startEditing(id) {
     const todoItem = document.querySelector(`.todo-item[data-id="${id}"]`);
-    const todoText = todoItem.querySelector('.todo-text');
+    const textContainer = todoItem.querySelector('.text-container');
+    const todoText = textContainer.querySelector('.todo-text');
     const currentText = todoText.textContent;
+    
+    // 获取当前待办事项
+    const todo = todos.find(t => t.id === id);
+    
+    // 创建编辑容器
+    const editContainer = document.createElement('div');
+    editContainer.classList.add('edit-container');
     
     // 创建编辑输入框
     const editInput = document.createElement('input');
@@ -199,29 +259,47 @@ function startEditing(id) {
     editInput.classList.add('edit-input');
     editInput.value = currentText;
     
-    // 替换文本为输入框
-    todoItem.replaceChild(editInput, todoText);
+    // 创建日期输入框
+    const dateInput = document.createElement('input');
+    dateInput.type = 'date';
+    dateInput.classList.add('edit-date-input');
+    if (todo.dueDate) {
+        dateInput.value = todo.dueDate;
+    }
+    
+    // 添加输入框到编辑容器
+    editContainer.appendChild(editInput);
+    editContainer.appendChild(dateInput);
+    
+    // 替换文本容器为编辑容器
+    todoItem.replaceChild(editContainer, textContainer);
     editInput.focus();
     
     // 添加事件监听器
-    editInput.addEventListener('blur', () => finishEditing(id, editInput));
+    editInput.addEventListener('blur', () => finishEditing(id, editInput, dateInput));
+    dateInput.addEventListener('blur', () => finishEditing(id, editInput, dateInput));
     editInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            finishEditing(id, editInput);
+            finishEditing(id, editInput, dateInput);
         }
     });
 }
 
 // 完成编辑待办事项
-function finishEditing(id, editInput) {
+function finishEditing(id, editInput, dateInput) {
     const newText = editInput.value.trim();
+    const newDate = dateInput.value;
     const todoItem = document.querySelector(`.todo-item[data-id="${id}"]`);
     
     if (newText) {
-        // 更新待办事项文本
+        // 更新待办事项文本和日期
         todos = todos.map(todo => {
             if (todo.id === id) {
-                return { ...todo, text: newText };
+                return { 
+                    ...todo, 
+                    text: newText,
+                    dueDate: newDate || todo.dueDate
+                };
             }
             return todo;
         });
@@ -306,6 +384,76 @@ function setupKeyboardShortcuts() {
     });
 }
 
+// 检查两个日期是否是同一天
+function isSameDay(date1, date2) {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+}
+
+// 格式化日期为易读格式
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+}
+
+// 检查并提醒即将到期的任务
+function checkDueTasks() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const dueTodayTasks = todos.filter(todo => 
+        !todo.completed && todo.dueDate && isSameDay(new Date(todo.dueDate), today)
+    );
+    
+    const dueTomorrowTasks = todos.filter(todo => 
+        !todo.completed && todo.dueDate && isSameDay(new Date(todo.dueDate), tomorrow)
+    );
+    
+    const overdueTasks = todos.filter(todo => 
+        !todo.completed && todo.dueDate && new Date(todo.dueDate) < today
+    );
+    
+    if (dueTodayTasks.length > 0 || dueTomorrowTasks.length > 0 || overdueTasks.length > 0) {
+        let message = '';
+        
+        if (overdueTasks.length > 0) {
+            message += `您有 ${overdueTasks.length} 个已过期的任务！\n`;
+        }
+        
+        if (dueTodayTasks.length > 0) {
+            message += `您有 ${dueTodayTasks.length} 个今天到期的任务！\n`;
+        }
+        
+        if (dueTomorrowTasks.length > 0) {
+            message += `您有 ${dueTomorrowTasks.length} 个明天到期的任务！`;
+        }
+        
+        showReminderToast(message);
+    }
+}
+
+// 显示提醒通知
+function showReminderToast(message) {
+    const toast = document.createElement('div');
+    toast.classList.add('toast', 'reminder-toast');
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // 5秒后自动消失
+    setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 5000);
+}
+
 // 页面加载时初始化
 document.addEventListener('DOMContentLoaded', () => {
     loadTodos();
@@ -315,6 +463,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 显示欢迎提示
     if (todos.length === 0) {
         showWelcomeToast();
+    } else {
+        // 检查到期任务
+        checkDueTasks();
     }
 });
 

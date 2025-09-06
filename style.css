@@ -45,13 +45,28 @@ header h1 {
     flex: 1;
     padding: 12px 15px;
     border: 1px solid #ddd;
-    border-radius: 4px 0 0 4px;
+    border-radius: 4px 0 0 0;
     font-size: 1rem;
     outline: none;
     transition: border-color 0.3s;
 }
 
 #todo-input:focus {
+    border-color: #f6d365;
+}
+
+#due-date-input {
+    padding: 12px 10px;
+    border: 1px solid #ddd;
+    border-left: none;
+    border-right: none;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s;
+    width: 140px;
+}
+
+#due-date-input:focus {
     border-color: #f6d365;
 }
 
@@ -98,6 +113,124 @@ header h1 {
 }
 
 /* 任务列表样式 */
+.todo-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    transition: all 0.3s;
+    background-color: #fff;
+}
+
+.todo-item:last-child {
+    border-bottom: none;
+}
+
+.todo-item:hover {
+    background-color: #f9f9f9;
+}
+
+.todo-item.completed {
+    opacity: 0.7;
+}
+
+.todo-item.completed .todo-text {
+    text-decoration: line-through;
+    color: #999;
+}
+
+.todo-item.overdue {
+    border-left: 4px solid #ff5252;
+}
+
+.todo-item.due-today {
+    border-left: 4px solid #ffb142;
+}
+
+.todo-checkbox {
+    margin-right: 15px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.text-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.todo-text {
+    font-size: 1rem;
+    color: #333;
+    word-break: break-word;
+}
+
+.due-date {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 5px;
+}
+
+.due-date.overdue {
+    color: #ff5252;
+    font-weight: bold;
+}
+
+.due-date.due-today {
+    color: #ffb142;
+    font-weight: bold;
+}
+
+.due-date.due-soon {
+    color: #2ecc71;
+}
+
+.todo-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.edit-btn, .delete-btn {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.3s;
+}
+
+.edit-btn:hover {
+    color: #f6d365;
+}
+
+.delete-btn:hover {
+    color: #ff5252;
+}
+
+.edit-container {
+    flex: 1;
+    display: flex;
+    gap: 10px;
+}
+
+.edit-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #f6d365;
+    border-radius: 4px;
+    font-size: 1rem;
+    outline: none;
+}
+
+.edit-date-input {
+    padding: 8px;
+    border: 1px solid #f6d365;
+    border-radius: 4px;
+    font-size: 1rem;
+    outline: none;
+    width: 140px;
+}
 #todo-list {
     list-style-type: none;
     margin-bottom: 20px;
@@ -258,11 +391,19 @@ header h1 {
     z-index: 1000;
     animation: fadeInUp 0.3s;
     transition: opacity 0.3s, transform 0.3s;
+    max-width: 80%;
+    text-align: center;
+    white-space: pre-line;
 }
 
 .toast.hide {
     opacity: 0;
     transform: translateX(-50%) translateY(20px);
+}
+
+.reminder-toast {
+    background-color: rgba(255, 82, 82, 0.9);
+    font-weight: bold;
 }
 
 @keyframes fadeInUp {
